@@ -1,0 +1,178 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+
+\geometry{margin=1in}
+
+\title{Sequential Image Enhancement as a Reinforcement Learning Problem}
+\author{MAHMOUD ATTALLAH, T\#00425531}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Image enhancement aims to improve the perceptual quality of images through operations such as brightness adjustment, contrast correction, and sharpening. 
+Traditional image processing pipelines often apply a fixed sequence of operations or learn a direct mapping from degraded images to enhanced outputs.
+
+However, image enhancement naturally involves a sequence of decisions. The effect of one editing operation depends on previously applied operations, and multiple valid sequences of operations may lead to satisfactory results.
+
+This observation motivates modeling image enhancement as a \textbf{reinforcement learning (RL)} problem. In this formulation, an \emph{agent} interacts with an \emph{environment} representing the image editing process. At each step the agent selects an image editing action based on the current image state, receives a reward indicating the improvement in image quality, and transitions to a new state corresponding to the edited image.
+
+The goal of the agent is to learn a \textbf{policy} that maximizes the expected cumulative reward, thereby learning how to sequentially improve image quality.
+
+\section{Reinforcement Learning Framework}
+
+The agent interacting with an environment over discrete time steps $t = 0,1,2,\dots$.
+
+At each time step:
+
+\begin{itemize}
+\item The agent observes the current state $S_t$
+\item The agent selects an action $A_t$
+\item The environment responds with a reward $R_{t+1}$
+\item The environment transitions to a new state $S_{t+1}$
+\end{itemize}
+
+The agent's behavior is defined by a \textbf{policy} $\pi(a|s)$ that specifies the probability of selecting action $a$ when the agent is in state $s$.
+
+The objective of the agent is to maximize the expected \textbf{return} defined as
+
+\[
+G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+\]
+
+where $\gamma \in [0,1]$ is the discount factor.
+
+\section{Dataset Construction}
+
+Large-scale image datasets such as ImageNet and MS-COCO contain high-quality images across a wide range of scenes and object categories. These datasets can be used to generate training data for the reinforcement learning agent.
+
+To simulate degraded images, synthetic distortions are applied to high-quality images using nonlinear transformations such as:
+
+\begin{itemize}
+\item brightness shifts
+\item contrast distortions
+\item gamma correction
+\item color imbalance
+\item Gaussian blur
+\end{itemize}
+
+The distorted images serve as the initial states of reinforcement learning episodes, while the original images are used for computing quality-based reward signals during training.
+
+\section{Problem Formulation}
+
+The image enhancement task is formulated as a Markov Decision Process (MDP).
+
+\subsection{State Space}
+
+The state $S_t$ corresponds to the current image after $t$ enhancement steps:
+
+\[
+S_t = X_t
+\]
+
+where $X_t$ denotes the current image.
+
+Optionally, the state representation can be augmented with additional information describing recent changes to the image:
+
+\[
+V_t = X_t - X_{t-1}
+\]
+
+The state may therefore be represented as
+
+\[
+S_t = (X_t, V_t)
+\]
+
+which allows the agent to observe both the current image and the effect of the previous editing action.
+
+\subsection{Action Space}
+
+The agent selects an editing action $A_t$ that modifies the current image.
+
+Possible actions include:
+
+\begin{itemize}
+\item brightness adjustment
+\item contrast scaling
+\item sharpness enhancement
+\item color saturation adjustment
+\end{itemize}
+
+The action may be represented as a continuous vector controlling the strength of these operations:
+
+\[
+A_t = [a_b, a_c, a_s, a_{sat}]
+\]
+
+After selecting an action, the environment applies the editing transformation:
+
+\[
+X_{t+1} = f(X_t, A_t)
+\]
+
+where $f(\cdot)$ represents the image editing operation.
+
+\subsection{Reward Signal}
+
+The reward represents the improvement in perceptual image quality.
+
+Let $Q(X)$ denote an image quality evaluation function. The reward is defined as
+
+\[
+R_{t+1} = Q(X_{t+1}) - Q(X_t)
+\]
+
+This reward formulation provides feedback indicating whether the chosen action improved image quality.
+
+Possible quality measures include:
+
+\begin{itemize}
+\item Structural Similarity Index (SSIM)
+\item perceptual similarity using VGG features
+\item CLIP-based semantic similarity
+\end{itemize}
+
+\subsection{Episode Structure}
+
+The image enhancement task is formulated as an \textbf{episodic task}. Each episode begins with a distorted image sampled from the dataset.
+
+At each time step the agent selects an editing action and the image is updated accordingly. The episode terminates when:
+
+\begin{itemize}
+\item a maximum number of editing steps $T$ is reached, or
+\item the improvement in image quality becomes negligible
+\end{itemize}
+
+The return for the episode is therefore
+
+\[
+G_0 = \sum_{t=0}^{T-1} \gamma^t R_{t+1}
+\]
+
+\section{Objective}
+
+The goal of the reinforcement learning agent is to learn a policy $\pi$ that maximizes the expected return:
+
+\[
+\pi^* = \arg\max_{\pi} \mathbb{E}_\pi [G_t]
+\]
+
+A learned policy corresponds to an adaptive sequence of image editing decisions that progressively improves the perceptual quality of the image.
+
+% \section{Conclusion}
+
+% This work formulates image enhancement as a sequential decision-making problem using the reinforcement learning framework. By modeling the enhancement process as an interaction between an agent and an environment, the agent can learn policies that adaptively select image editing operations based on the current visual state.
+
+% This formulation enables flexible and content-aware enhancement strategies and provides a principled framework for learning sequential image editing policies.
+
+\end{document}
